@@ -23,8 +23,8 @@ SERVER = (SERVER_HOST, ASSIGNED_PORT)
 # ==================================================================
 
 # Timing/reliability parameters
-RTO = 0.5        # retransmission timeout (seconds)
-RETRIES = 5      # max retries per send
+RTO = 0.9        # retransmission timeout (seconds)
+RETRIES = 10      # max retries per send
 CHUNK = 200      # bytes per DATA chunk
 
 # --- Protocol type codes (1 byte) ---
@@ -61,6 +61,7 @@ def send_recv_with_retry(sock, pkt, expect_types, expect_seq=None):
     Retries up to RETRIES times.
     Returns (tp, seq) on success, (None, None) on failure.
     """
+    cur_to = RTO
     for _ in range(RETRIES):
         sock.sendto(pkt, SERVER)
         sock.settimeout(RTO)
@@ -70,8 +71,8 @@ def send_recv_with_retry(sock, pkt, expect_types, expect_seq=None):
             if tp in expect_types and (expect_seq is None or s == expect_seq):
                 return tp, s
         except socket.timeout:
-            # retry on timeout
-            continue
+            pass
+        cur_to = min(cur_to * 1.5, 2.5)
     return None, None
 
 def main():
@@ -92,15 +93,22 @@ def main():
     # ===============================================================
 
     # ============ PHASE 2: DATA SEND LOOP (YOU IMPLEMENT) =========
-    # TODO:
-    #   - Convert MESSAGE to bytes
-    #   - Loop over CHUNK-sized slices; seq starts at 0 and increments
-    #   - For each chunk:
-    #       * print(f'[CLIENT] DATA seq={seq}')
-    #       * send DATA, then wait (with retry) for DATA-ACK with same seq
-    #       * on success print(f'[CLIENT] ACK seq={seq}')
-    #       * on failure, exit with a message
-    pass  # <-- replace with your data send loop
+    data_bytes = MESSAGE if isinstance(MESSAGE, (bytes, bytearray)) else str(MESSAGE).encode()
+    seq = 0
+
+    for off in range(0, len(data_bytes), CHUNK):
+        chunk = data_bytes[off:off + CHUNK]
+        print(f'[CLIENT] DATA seq={seq} len={len(chunk)}')
+
+        data_pkt = pack_msg(DATA, seq, chunk)
+        tp, got_seq = send_recv_with_retry(cli, data_pkt, expect_types={DATA_ACK}, expect_seq=seq)
+        if tp != DATA_ACK or got_seq != seq:
+            print(f'[CLIENT] Failed to get DATA-ACK for seq={seq} after {RETRIES} retries')
+            cli.close()
+            return
+
+        print(f'[CLIENT] ACK seq={seq}')
+        seq += 1
     # ===============================================================
 
     # ============ PHASE 3: TEARDOWN (YOU IMPLEMENT) ===============

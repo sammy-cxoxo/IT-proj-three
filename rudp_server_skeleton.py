@@ -82,14 +82,27 @@ def main():
 
         # ============ PHASE 2: DATA (YOU IMPLEMENT) =================
         if tp == DATA:
-            # TODO:
-            #   - If seq == expect_seq:
-            #       * "deliver" the payload (e.g., print it as text)
-            #       * send DATA-ACK with the same seq
-            #       * expect_seq += 1
-            #   - Else (out-of-order):
-            #       * re-ACK the last in-order packet (expect_seq - 1)
-            pass  # <-- replace with your data logic
+            if client_addr is not None and addr != client_addr:
+                continue
+
+            if seq == expect_seq:
+                try:
+                    text = pl.decode('utf-8', errors='ignore')
+                except Exception:
+                    text = str(pl)
+                print(f'[SERVER] DATA seq={seq} len={len(pl)} -> {text!r}')
+
+                delay_ms = random.randint(100, 1000)
+                time.sleep(delay_ms / 1000.0)
+
+                sock.sendto(pack_msg(DATA_ACK, seq, b''), client_addr)
+                expect_seq += 1
+            else:
+                last_in_order = expect_seq - 1
+                if last_in_order >= 0:
+                    delay_ms = random.randint(100, 1000)
+                    time.sleep(delay_ms / 1000.0)
+                    sock.sendto(pack_msg(DATA_ACK, last_in_order, b''), client_addr)
             continue
         # ============================================================
 
