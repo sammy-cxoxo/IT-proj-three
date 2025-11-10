@@ -92,7 +92,7 @@ def main():
                     text = str(pl)
                 print(f'[SERVER] DATA seq={seq} len={len(pl)} -> {text!r}')
 
-                delay_ms = random.randint(100, 1000)
+                delay_ms = random.randint(100, 1200)
                 time.sleep(delay_ms / 1000.0)
 
                 sock.sendto(pack_msg(DATA_ACK, seq, b''), client_addr)
