@@ -64,7 +64,7 @@ def send_recv_with_retry(sock, pkt, expect_types, expect_seq=None):
     cur_to = RTO
     for _ in range(RETRIES):
         sock.sendto(pkt, SERVER)
-        sock.settimeout(RTO)
+        sock.settimeout(cur_to)
         try:
             resp, _ = sock.recvfrom(2048)
             tp, s, _ = unpack_msg(resp)
