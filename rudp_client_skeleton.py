@@ -112,11 +112,18 @@ def main():
     # ===============================================================
 
     # ============ PHASE 3: TEARDOWN (YOU IMPLEMENT) ===============
-    # TODO:
-    #   - print('[CLIENT] FIN')
-    #   - send FIN and wait (with retry) for FIN-ACK
-    #   - on success print('[CLIENT] Connection closed')
-    pass  # <-- replace with your teardown code
+    fin_seq = seq
+    print('[CLIENT] FIN')
+    fin_pkt = pack_msg(FIN, fin_seq, b'')
+
+    tp, got_seq = send_recv_with_retry(
+        cli, fin_pkt, expect_types={FIN_ACK}, expect_seq=fin_seq
+    )
+
+    if tp == FIN_ACK and got_seq == fin_seq:
+        print('[CLIENT] Connection closed')
+    else:
+        print('[CLIENT] Teardown failed: no FIN-ACK after retries')
     # ===============================================================
 
     cli.close()

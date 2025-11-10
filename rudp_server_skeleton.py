@@ -107,12 +107,13 @@ def main():
         # ============================================================
 
         # ============ PHASE 3: TEARDOWN (YOU IMPLEMENT) =============
-        if tp == FIN:
-            # TODO:
-            #   - print('[SERVER] FIN received, closing')
-            #   - send FIN-ACK to client_addr
-            #   - reset state: established=False; client_addr=None; expect_seq=0
-            pass  # <-- replace with your teardown logic
+        if tp == FIN and addr == client_addr:
+            print(f'[SERVER] FIN received from {addr} (seq={seq}), closing')
+            sock.sendto(pack_msg(FIN_ACK, seq, b''), client_addr)
+
+            established = False
+            client_addr = None
+            expect_seq = 0
             continue
         # ============================================================
 
