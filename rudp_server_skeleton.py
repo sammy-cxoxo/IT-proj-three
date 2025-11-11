@@ -58,18 +58,29 @@ def main():
         # ============ PHASE 1: HANDSHAKE (YOU IMPLEMENT) ============
         if not established:
             if tp == SYN:
+
                 if client_addr is None:
+
                     client_addr = addr
-                    print('[SERVER] got SYN from', addr)
+
+                    print('[Serv] got SYN from this address: ', addr)
+
                 if addr != client_addr:
+
                     continue
+
                 sock.sendto(pack_msg(SYN_ACK, 0, b''), client_addr)
+
                 continue
 
-            if tp == ACK and addr == client_addr:
-                print('[SERVER] handshake complete')
+            if (tp == ACK) and (addr == client_addr):
+
+                print('[Serv] handshake is complete')
+
                 established = True
+
                 expect_seq = 0
+
                 continue
 
             continue
@@ -82,38 +93,63 @@ def main():
 
         # ============ PHASE 2: DATA (YOU IMPLEMENT) =================
         if tp == DATA:
+
             if client_addr is not None and addr != client_addr:
                 continue
 
+
+
             if seq == expect_seq:
                 try:
+
                     text = pl.decode('utf-8', errors='ignore')
+
                 except Exception:
+
                     text = str(pl)
-                print(f'[SERVER] DATA seq={seq} len={len(pl)} -> {text!r}')
+
+                print(f'[Serv] DATA with seq={seq} len={len(pl)} -> {text!r}')
+
 
                 delay_ms = random.randint(100, 1200)
+
+
                 time.sleep(delay_ms / 1000.0)
 
+
                 sock.sendto(pack_msg(DATA_ACK, seq, b''), client_addr)
+
+
                 expect_seq += 1
             else:
                 last_in_order = expect_seq - 1
+
                 if last_in_order >= 0:
+
                     delay_ms = random.randint(100, 1000)
+
                     time.sleep(delay_ms / 1000.0)
+
                     sock.sendto(pack_msg(DATA_ACK, last_in_order, b''), client_addr)
+
             continue
         # ============================================================
 
         # ============ PHASE 3: TEARDOWN (YOU IMPLEMENT) =============
-        if tp == FIN and addr == client_addr:
-            print(f'[SERVER] FIN received from {addr} (seq={seq}), closing')
+        if (tp == FIN) and (addr == client_addr):
+
+            print(f'[Serv] FIN has been received from {addr} (seq={seq}), closing')
+
+
+
             sock.sendto(pack_msg(FIN_ACK, seq, b''), client_addr)
 
             established = False
+
             client_addr = None
+
             expect_seq = 0
+
             continue
         # ============================================================
 
